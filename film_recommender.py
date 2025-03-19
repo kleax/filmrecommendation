@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # Veri setlerini yükleyelim
 movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
-ratings_df = pd.read_csv("raw.githubusercontent.com/kleax/filmrecommendation/main/ratings.csv")
+ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
 
 # Türleri işleyelim (Content-based)
 movies_df['genres'] = movies_df['genres'].fillna('')
