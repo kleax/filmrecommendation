@@ -3,9 +3,13 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Verileri yükle (GitHub raw linklerini kendi repona göre düzenle)
-movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
-ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
+@st.cache_data
+def load_data():
+    movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
+    ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
+    return movies_df, ratings_df
+
+movies_df, ratings_df = load_data()
 
 movies_df['genres'] = movies_df['genres'].fillna('')
 vectorizer = CountVectorizer(token_pattern=r'[^|]+')
@@ -21,7 +25,6 @@ popular_movies.sort()
 st.title('🎬 Film Öneri Sistemi')
 
 selected_movies = st.multiselect("Beğendiğin Filmleri Seç:", popular_movies)
-
 year_range = st.slider('Hangi yıllar arasında filmler önerelim?', 1950, 2020, (2000, 2010))
 
 def recommend_movies_content(selected_movies, similarity_df, movies_df, year_range, n=5):
@@ -30,14 +33,17 @@ def recommend_movies_content(selected_movies, similarity_df, movies_df, year_ran
     recommendations = similarity_scores.sort_values(ascending=False).reset_index()
 
     movies_df['year'] = movies_df['title'].str.extract(r'\((\d{4})\)').astype(float)
-    movies_df = movies_df.dropna(subset=['year'])  # NaN değerleri kaldır
+    movies_df = movies_df.dropna(subset=['year'])  
     movies_df['year'] = movies_df['year'].astype(int)
 
-    filtered_movies = movies_df[(movies_df['year'] >= year_range[0]) & (movies_df['year'] <= year_range[1])]
+    filtered_movies = movies_df[
+        (movies_df['year'] >= year_range[0]) & (movies_df['year'] <= year_range[1])
+    ]
 
     recommendations = recommendations[recommendations['title'].isin(filtered_movies['title'])].head(n)
     return recommendations['title'].tolist()
 
+# ÖNEMLİ: Hesaplama sadece butona basılınca gerçekleşecek.
 if st.button('Önerileri Göster'):
     if selected_movies:
         recommendations = recommend_movies_content(selected_movies, genre_similarity_df, movies_df, year_range)
