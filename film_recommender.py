@@ -9,7 +9,7 @@ ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommenda
 
 # Türleri işleyelim (Content-based)
 movies_df['genres'] = movies_df['genres'].fillna('')
-vectorizer = CountVectorizer(tokenizer=lambda x: x.split('|'))
+vectorizer = CountVectorizer(token_pattern=r'[^|]+')
 genre_matrix = vectorizer.fit_transform(movies_df['genres'])
 
 # Cosine benzerliği hesaplayalım
@@ -32,7 +32,7 @@ def recommend_movies_content(selected_movies, similarity_df, movies_df, year_ran
     similarity_scores = similarity_scores.drop(labels=selected_movies)
     recommendations = similarity_scores.sort_values(ascending=False).reset_index()
 
-    movies_df['year'] = movies_df['title'].str.extract('\((\d{4})\)').astype(float)
+    movies_df['year'] = movies_df['title'].str.extract(r'\((\d{4})\)').astype(float)
     filtered_movies = movies_df[(movies_df['year'] >= year_range[0]) & (movies_df['year'] <= year_range[1])]
 
     recommendations = recommendations[recommendations['title'].isin(filtered_movies['title'])].head(n)
