@@ -4,8 +4,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Verileri yükle (GitHub raw linklerini kendi repona göre düzenle)
-movies_df = pd.read_csv("https://raw.githubusercontent.com/KULLANICI_ADIN/REPO_ADIN/main/movies.csv")
-ratings_df = pd.read_csv("https://raw.githubusercontent.com/KULLANICI_ADIN/REPO_ADIN/main/ratings.csv")
+movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
+ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
 
 movies_df['genres'] = movies_df['genres'].fillna('')
 vectorizer = CountVectorizer(token_pattern=r'[^|]+')
