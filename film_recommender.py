@@ -3,24 +3,21 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Veri setlerini yükleyelim
-movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
-ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
+# Verileri yükle (GitHub raw linklerini kendi repona göre düzenle)
+movies_df = pd.read_csv("https://raw.githubusercontent.com/KULLANICI_ADIN/REPO_ADIN/main/movies.csv")
+ratings_df = pd.read_csv("https://raw.githubusercontent.com/KULLANICI_ADIN/REPO_ADIN/main/ratings.csv")
 
-# Türleri işleyelim (Content-based)
 movies_df['genres'] = movies_df['genres'].fillna('')
 vectorizer = CountVectorizer(token_pattern=r'[^|]+')
 genre_matrix = vectorizer.fit_transform(movies_df['genres'])
 
-# Cosine benzerliği hesaplayalım
 genre_similarity = cosine_similarity(genre_matrix)
 genre_similarity_df = pd.DataFrame(genre_similarity, index=movies_df['title'], columns=movies_df['title'])
 
-# Popüler filmleri bulalım
 movie_ratings_clean = pd.merge(ratings_df, movies_df, on='movieId').drop('timestamp', axis=1)
-popular_movies = movie_ratings_clean.groupby('title').rating.count().sort_values(ascending=False).head(30).index.tolist()
+popular_movies = movie_ratings_clean.groupby('title').rating.count().sort_values(ascending=False).head(50).index.tolist()
+popular_movies.sort()
 
-# Streamlit UI
 st.title('🎬 Film Öneri Sistemi')
 
 selected_movies = st.multiselect("Beğendiğin Filmleri Seç:", popular_movies)
@@ -33,6 +30,9 @@ def recommend_movies_content(selected_movies, similarity_df, movies_df, year_ran
     recommendations = similarity_scores.sort_values(ascending=False).reset_index()
 
     movies_df['year'] = movies_df['title'].str.extract(r'\((\d{4})\)').astype(float)
+    movies_df = movies_df.dropna(subset=['year'])  # NaN değerleri kaldır
+    movies_df['year'] = movies_df['year'].astype(int)
+
     filtered_movies = movies_df[(movies_df['year'] >= year_range[0]) & (movies_df['year'] <= year_range[1])]
 
     recommendations = recommendations[recommendations['title'].isin(filtered_movies['title'])].head(n)
@@ -41,8 +41,11 @@ def recommend_movies_content(selected_movies, similarity_df, movies_df, year_ran
 if st.button('Önerileri Göster'):
     if selected_movies:
         recommendations = recommend_movies_content(selected_movies, genre_similarity_df, movies_df, year_range)
-        st.subheader('Sana özel öneriler:')
-        for movie in recommendations:
-            st.write(f'🎯 {movie}')
+        if recommendations:
+            st.subheader('Sana özel öneriler:')
+            for movie in recommendations:
+                st.write(f'🎯 {movie}')
+        else:
+            st.warning('Seçilen yıl aralığında önerilebilecek film bulunamadı.')
     else:
         st.warning('Lütfen önce film seçimi yap.')
