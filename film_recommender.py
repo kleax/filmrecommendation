@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Veri setlerini yükleyelim
-movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/main/movies.csv")
+movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
 ratings_df = pd.read_csv("raw.githubusercontent.com/kleax/filmrecommendation/main/ratings.csv")
 
 # Türleri işleyelim (Content-based)
