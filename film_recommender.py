@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+
 @st.cache_data
 def load_data():
     movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
@@ -10,14 +11,24 @@ def load_data():
     return movies_df, ratings_df
 
 movies_df, ratings_df = load_data()
+#new
+@st.cache_data
+def calculate_genre_similarity(movies_df):
+    vectorizer = CountVectorizer(token_pattern=r'[^|]+')
+    genre_matrix = vectorizer.fit_transform(movies_df['genres'])
+    genre_similarity = cosine_similarity(genre_matrix)
+    return pd.DataFrame(genre_similarity, index=movies_df['title'], columns=movies_df['title'])
+#new
 
 # Genre-based similarity matrix
 movies_df['genres'] = movies_df['genres'].fillna('')
-vectorizer = CountVectorizer(token_pattern=r'[^|]+')
+"""vectorizer = CountVectorizer(token_pattern=r'[^|]+')
 genre_matrix = vectorizer.fit_transform(movies_df['genres'])
 
-genre_similarity = cosine_similarity(genre_matrix)
-genre_similarity_df = pd.DataFrame(genre_similarity, index=movies_df['title'], columns=movies_df['title'])
+genre_similarity = cosine_similarity(genre_matrix)"""
+genre_similarity_df = calculate_genre_similarity(movies_df)
+
+# beklemede genre_similarity_df = pd.DataFrame(genre_similarity, index=movies_df['title'], columns=movies_df['title'])
 
 # Popular movies selection
 movie_ratings_clean = pd.merge(ratings_df, movies_df, on='movieId').drop(columns=['timestamp'])
