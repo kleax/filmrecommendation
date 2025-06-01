@@ -6,14 +6,17 @@ from sklearn.metrics.pairwise import linear_kernel
 # 📦 Veri yükleme
 @st.cache_data
 def load_data():
-    movies_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
-    ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
-    ratings_df = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/tags.csv")
-    
-    # Tag birleştirme
+    movies = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
+    ratings = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
+    tags = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/tags.csv")
+
+    # 🎯 Tag'leri birleştir
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
+    
+    # 🎯 Content sütunu oluştur
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
+    
     return movies, ratings
 
 movies, ratings = load_data()
