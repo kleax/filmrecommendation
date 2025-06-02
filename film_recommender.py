@@ -60,18 +60,6 @@ def content_recommendations(selected_titles, n=10):
 
     return pd.Series(all_scores).sort_values(ascending=False).head(n)
 
-# -------------------- USER-BASED CF --------------------
-def cf_recommendations(selected_titles, n=10, min_rating=3.5):
-    movie_ids = movies[movies['title'].isin(selected_titles)]['movieId'].tolist()
-    users_who_liked = ratings[(ratings['movieId'].isin(movie_ids)) & (ratings['rating'] >= min_rating)]['userId'].unique()
-    similar_ratings = ratings[(ratings['userId'].isin(users_who_liked)) & (~ratings['movieId'].isin(movie_ids))]
-
-    recommendation_scores = similar_ratings.groupby('movieId')['rating'].mean()
-    top_movie_ids = recommendation_scores.sort_values(ascending=False).head(n).index
-    top_movies = movies[movies['movieId'].isin(top_movie_ids)][['movieId', 'title']]
-
-    return pd.Series(top_movies['title'].values, index=top_movies['title'].values)
-
 # -------------------- ITEM-BASED CF --------------------
 @st.cache_resource
 def build_item_based_model(ratings):
@@ -99,15 +87,16 @@ def item_based_recommendations(selected_titles, n=10):
 # -------------------- HYBRID MODEL --------------------
 def hybrid_recommendations(selected_titles, n=10):
     cbf = content_recommendations(selected_titles, n=30)
-    cf = cf_recommendations(selected_titles, n=30)
+    item_cf = item_based_recommendations(selected_titles, n=30)
 
     cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.index)
-    cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.index)
+    item_cf_scores = pd.Series([1 - i/30 for i in range(len(item_cf))], index=item_cf.index)
 
-    hybrid_scores = cbf_scores.add(cf_scores, fill_value=0)
+    hybrid_scores = cbf_scores.add(item_cf_scores, fill_value=0)
     hybrid_scores = hybrid_scores.sort_values(ascending=False).head(n)
 
     return hybrid_scores.index.tolist()
+
 
 # -------------------- STREAMLIT UI --------------------
 st.title("🎬 Film Oneri Sistemi")
@@ -125,11 +114,6 @@ if st.button("🚀 Onerileri Goster"):
         for title in cbf.index:
             st.write(f"🎬 {title}")
 
-        st.markdown("### 👥 User-Based CF Oneriler:")
-        cf = cf_recommendations(selected_movies)
-        for title in cf.index:
-            st.write(f"🎬 {title}")
-
         st.markdown("### 🧩 Item-Based CF Oneriler:")
         item_cf = item_based_recommendations(selected_movies)
         for title in item_cf:
@@ -141,3 +125,4 @@ if st.button("🚀 Onerileri Goster"):
             st.write(f"🎬 {title}")
     else:
         st.warning("Lütfen en az bir film seç.")
+
