@@ -1,3 +1,6 @@
+import gdown
+import zipfile
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,30 +10,24 @@ from sklearn.metrics.pairwise import linear_kernel
 # -------------------- VERI YUKLEME --------------------
 @st.cache_data
 def load_data():
-    # Google Drive dosya ID'leri
-    movie_id = "1U_wUI4XnSzEFyVBQESUCUSot5aKOj-mj"
-    rating_id = "1jJPaxnE0aYIq3_gdrKFZ1yKeOfHLu0i8"
-    tag_id = "19fz8f8NxiuBIkWSI9nchShVU_Yfw1PNr"
+    file_id = "1-C9k0cTqEM3Y6uHMBdwH6mGeJVDagANc"
+    url = f"https://drive.google.com/uc?id={file_id}"
+    output = "movielens_data.zip"
 
-    base = "https://drive.google.com/uc?export=download&id="
+    if not os.path.exists("movies.csv"):
+        gdown.download(url, output, quiet=False)
 
-    movies = pd.read_csv(base + movie_id)
-    ratings = pd.read_csv(base + rating_id)
-    tags = pd.read_csv(base + tag_id)
+        with zipfile.ZipFile(output, 'r') as zip_ref:
+            zip_ref.extractall(".")
 
-    # 🔍 Sütun isimlerini yazdıralım
-    st.write("📁 movies.csv columns:", movies.columns.tolist())
-    st.write("📁 ratings.csv columns:", ratings.columns.tolist())
-    st.write("📁 tags.csv columns:", tags.columns.tolist())
-
-    # Devam etmeden önce kontrol
-    if 'movieId' not in tags.columns:
-        st.error("❌ 'movieId' sütunu tags.csv dosyasında yok. CSV yapısını kontrol et.")
-        return movies, ratings  # Geri dön ve merge yapma
+    movies = pd.read_csv("movies.csv")
+    ratings = pd.read_csv("ratings.csv")
+    tags = pd.read_csv("tags.csv")
 
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
+
     return movies, ratings
 
 
