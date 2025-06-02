@@ -5,7 +5,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import linear_kernel
+from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
+from scipy.sparse import csr_matrix
 
 # -------------------- VERI YUKLEME --------------------
 @st.cache_data
@@ -16,7 +17,6 @@ def load_data():
 
     if not os.path.exists("movies.csv"):
         gdown.download(url, output, quiet=False)
-
         with zipfile.ZipFile(output, 'r') as zip_ref:
             zip_ref.extractall(".")
 
@@ -29,7 +29,6 @@ def load_data():
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
 
     return movies, ratings
-
 
 movies, ratings = load_data()
 
@@ -61,7 +60,7 @@ def content_recommendations(selected_titles, n=10):
 
     return pd.Series(all_scores).sort_values(ascending=False).head(n)
 
-# -------------------- COLLABORATIVE FILTERING --------------------
+# -------------------- USER-BASED CF --------------------
 def cf_recommendations(selected_titles, n=10, min_rating=3.5):
     movie_ids = movies[movies['title'].isin(selected_titles)]['movieId'].tolist()
     users_who_liked = ratings[(ratings['movieId'].isin(movie_ids)) & (ratings['rating'] >= min_rating)]['userId'].unique()
@@ -72,6 +71,30 @@ def cf_recommendations(selected_titles, n=10, min_rating=3.5):
     top_movies = movies[movies['movieId'].isin(top_movie_ids)][['movieId', 'title']]
 
     return pd.Series(top_movies['title'].values, index=top_movies['title'].values)
+
+# -------------------- ITEM-BASED CF --------------------
+@st.cache_resource
+def build_item_based_model(ratings):
+    movie_user_matrix = ratings.pivot_table(index='movieId', columns='userId', values='rating').fillna(0)
+    sparse_matrix = csr_matrix(movie_user_matrix.values)
+    similarity_matrix = cosine_similarity(sparse_matrix)
+    similarity_df = pd.DataFrame(similarity_matrix, index=movie_user_matrix.index, columns=movie_user_matrix.index)
+    return similarity_df, movie_user_matrix
+
+similarity_df, movie_user_matrix = build_item_based_model(ratings)
+
+def item_based_recommendations(selected_titles, n=10):
+    movie_ids = movies[movies['title'].isin(selected_titles)]['movieId'].tolist()
+    similar_scores = pd.Series(dtype=float)
+
+    for movie_id in movie_ids:
+        if movie_id in similarity_df:
+            sims = similarity_df[movie_id].drop(labels=movie_ids, errors='ignore')
+            similar_scores = similar_scores.add(sims, fill_value=0)
+
+    top_movie_ids = similar_scores.sort_values(ascending=False).head(n).index
+    recommended_titles = movies[movies['movieId'].isin(top_movie_ids)]['title']
+    return recommended_titles
 
 # -------------------- HYBRID MODEL --------------------
 def hybrid_recommendations(selected_titles, n=10):
@@ -102,9 +125,14 @@ if st.button("🚀 Onerileri Goster"):
         for title in cbf.index:
             st.write(f"🎬 {title}")
 
-        st.markdown("### 👥 Collaborative Filtering Oneriler:")
+        st.markdown("### 👥 User-Based CF Oneriler:")
         cf = cf_recommendations(selected_movies)
         for title in cf.index:
+            st.write(f"🎬 {title}")
+
+        st.markdown("### 🧩 Item-Based CF Oneriler:")
+        item_cf = item_based_recommendations(selected_movies)
+        for title in item_cf:
             st.write(f"🎬 {title}")
 
         st.markdown("### 🧠 Hybrid Oneriler:")
