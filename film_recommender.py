@@ -6,15 +6,23 @@ from sklearn.metrics.pairwise import linear_kernel
 
 # -------------------- VERI YUKLEME --------------------
 @st.cache_data
-
 def load_data():
-    movies = pd.read_csv("https://huggingface.co/datasets/omersjmsek/movielens/raw/main/movies.csv")
-    ratings = pd.read_csv("https://huggingface.co/datasets/omersjmsek/movielens/raw/main/ratings.csv")
-    tags = pd.read_csv("https://huggingface.co/datasets/omersjmsek/movielens/raw/main/tags.csv")
+    # Google Drive dosya ID'leri
+    movie_id = "1U_wUI4XnSzEFyVBQESUCUSot5aKOj-mj"
+    rating_id = "1jJPaxnE0aYIq3_gdrKFZ1yKeOfHLu0i8"
+    tag_id = "19fz8f8NxiuBIkWSI9nchShVU_Yfw1PNr"
+
+    # Okuma URL'leri
+    base = "https://drive.google.com/uc?export=download&id="
+
+    movies = pd.read_csv(base + movie_id)
+    ratings = pd.read_csv(base + rating_id)
+    tags = pd.read_csv(base + tag_id)
 
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
+
     return movies, ratings
 
 movies, ratings = load_data()
