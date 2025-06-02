@@ -8,33 +8,33 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
 from scipy.sparse import csr_matrix
 
-# -------------------- VERI YUKLEME --------------------
+# -------------------- VERİ YÜKLEME --------------------
 @st.cache_data
 def load_data():
-    file_id = "1-C9k0cTqEM3Y6uHMBdwH6mGeJVDagANc"  # bu senin 32M drive linkin
+    file_id = "1-C9k0cTqEM3Y6uHMBdwH6mGeJVDagANc"  # 32M dataset Google Drive ID
     url = f"https://drive.google.com/uc?id={file_id}"
     output = "ml-latest.zip"
 
-    # Zip dosyasını indir
+    # ZIP dosyasını indir
     gdown.download(url, output, quiet=False, fuzzy=True)
 
-    # Zip içinden dosyaları çıkar
+    # ZIP'ten çıkar
     with zipfile.ZipFile(output, 'r') as zip_ref:
         zip_ref.extractall(".")
 
-    # Klasör içindeki dosyaları doğru path ile oku
     base_path = "ml-latest/"
     movies = pd.read_csv(base_path + "movies.csv")
     ratings = pd.read_csv(base_path + "ratings.csv")
     tags = pd.read_csv(base_path + "tags.csv")
 
-    # Tag'leri tek hücrede birleştir
+    # Tag'leri birleştir
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
 
     return movies, ratings
 
+movies, ratings = load_data()
 
 # -------------------- CONTENT-BASED MODEL --------------------
 @st.cache_resource
@@ -88,54 +88,49 @@ def item_based_recommendations(selected_titles, n=10):
     recommended_titles = movies[movies['movieId'].isin(top_movie_ids)]['title']
     return recommended_titles.tolist()
 
-
 # -------------------- HYBRID MODEL --------------------
 def hybrid_recommendations(selected_titles, n=10):
     cbf = content_recommendations(selected_titles, n=30)
-    item_cf_list = item_based_recommendations(selected_titles, n=30)
+    item_cf = item_based_recommendations(selected_titles, n=30)
 
     cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.index)
-    item_cf_scores = pd.Series([1 - i/30 for i in range(len(item_cf_list))], index=item_cf_list)
+    item_cf_scores = pd.Series([1 - i/30 for i in range(len(item_cf))], index=item_cf)
 
     hybrid_scores = cbf_scores.add(item_cf_scores, fill_value=0)
     hybrid_scores = hybrid_scores.sort_values(ascending=False).head(n)
 
     return hybrid_scores.index.tolist()
 
-
-
 # -------------------- STREAMLIT UI --------------------
-st.title("🎬 Film Oneri Sistemi")
-st.markdown("Begendiğin filmleri seç, sistem senin için öneri yapsın.")
+st.title("🎬 Film Öneri Sistemi")
+st.markdown("Beğendiğin filmleri seç, sistem senin için öneri yapsın.")
 
 st.markdown(f"""
 #### 📊 Sistem Hakkında
-Bu öneriler, {len(movies)} film ve {len(ratings)} kullanıcı oyu temel alınarak oluşturulmuştur.  
-Hem içerik benzerliği hem de izleyici davranışları birlikte analiz edilerek en uygun filmler seçilmektedir.
+Bu öneriler, **{len(movies):,} film** ve **{len(ratings):,} kullanıcı oyu** temel alınarak oluşturulmuştur.  
+Hem içerik benzerliği hem de izleyici davranışları birlikte analiz edilerek en uygun filmler sunulmaktadır.
 """)
-
 
 popular_movies = ratings['movieId'].value_counts().head(300).index
 popular_titles = movies[movies['movieId'].isin(popular_movies)]['title'].sort_values().tolist()
 
-selected_movies = st.multiselect("🎥 Film Sec:", popular_titles)
+selected_movies = st.multiselect("🎥 Film Seç:", popular_titles)
 
-if st.button("🚀 Onerileri Goster"):
+if st.button("🚀 Önerileri Göster"):
     if selected_movies:
-        st.markdown("### 📚 Content-Based Oneriler:")
+        st.markdown("### 📚 Content-Based Öneriler:")
         cbf = content_recommendations(selected_movies)
         for title in cbf.index:
             st.write(f"🎬 {title}")
 
-        st.markdown("### 🧩 Item-Based CF Oneriler:")
+        st.markdown("### 🧩 Item-Based CF Öneriler:")
         item_cf = item_based_recommendations(selected_movies)
         for title in item_cf:
             st.write(f"🎬 {title}")
 
-        st.markdown("### 🧠 Hybrid Oneriler:")
+        st.markdown("### 🧠 Hybrid Öneriler:")
         hybrid = hybrid_recommendations(selected_movies)
         for title in hybrid:
             st.write(f"🎬 {title}")
     else:
-        st.warning("Lütfen en az bir film seç.")
-
+        st.warning("Lütfen en az bir film seç.")
