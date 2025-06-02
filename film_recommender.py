@@ -65,7 +65,11 @@ def hybrid_recommendations(selected_titles, n=10):
     cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.index)
 
     hybrid_scores = cbf_scores.add(cf_scores, fill_value=0).sort_values(ascending=False)
-    return hybrid_scores.head(n).index
+    
+    # Film isimlerini döndür
+    return hybrid_scores.head(n).index.to_list()
+
+
 
 # -------------------- STREAMLIT UI --------------------
 st.title("🎬 Film Öneri Sistemi")
@@ -90,9 +94,8 @@ if st.button("🎯 Önerileri Göster"):
 
         st.subheader("🧠 Hybrid Öneriler:")
         hybrid = hybrid_recommendations(selected_movies)
-        for idx in hybrid:
-            movie_title = idx  # çünkü zaten film adı geliyor
-            st.write(f"🎬 {movie_title}")
+        for title in hybrid:
+        st.write(f"🎬 {title}")
 
     else:
         st.warning("Lütfen en az bir film seç.")
