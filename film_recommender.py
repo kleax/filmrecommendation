@@ -82,7 +82,8 @@ def item_based_recommendations(selected_titles, n=10):
 
     top_movie_ids = similar_scores.sort_values(ascending=False).head(n).index
     recommended_titles = movies[movies['movieId'].isin(top_movie_ids)]['title']
-    return recommended_titles
+    return recommended_titles.tolist()
+
 
 # -------------------- HYBRID MODEL --------------------
 def hybrid_recommendations(selected_titles, n=10):
