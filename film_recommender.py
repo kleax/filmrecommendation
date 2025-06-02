@@ -11,26 +11,30 @@ from scipy.sparse import csr_matrix
 # -------------------- VERI YUKLEME --------------------
 @st.cache_data
 def load_data():
-    file_id = "1-C9k0cTqEM3Y6uHMBdwH6mGeJVDagANc"
+    file_id = "1-C9k0cTqEM3Y6uHMBdwH6mGeJVDagANc"  # bu senin 32M drive linkin
     url = f"https://drive.google.com/uc?id={file_id}"
-    output = "movielens_data.zip"
+    output = "ml-latest.zip"
 
-    if not os.path.exists("movies.csv"):
-        gdown.download(url, output, quiet=False)
-        with zipfile.ZipFile(output, 'r') as zip_ref:
-            zip_ref.extractall(".")
+    # Zip dosyasını indir
+    gdown.download(url, output, quiet=False, fuzzy=True)
 
-    movies = pd.read_csv("movies.csv")
-    ratings = pd.read_csv("ratings.csv")
-    tags = pd.read_csv("tags.csv")
+    # Zip içinden dosyaları çıkar
+    with zipfile.ZipFile(output, 'r') as zip_ref:
+        zip_ref.extractall(".")
 
+    # Klasör içindeki dosyaları doğru path ile oku
+    base_path = "ml-latest/"
+    movies = pd.read_csv(base_path + "movies.csv")
+    ratings = pd.read_csv(base_path + "ratings.csv")
+    tags = pd.read_csv(base_path + "tags.csv")
+
+    # Tag'leri tek hücrede birleştir
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
 
     return movies, ratings
 
-movies, ratings = load_data()
 
 # -------------------- CONTENT-BASED MODEL --------------------
 @st.cache_resource
