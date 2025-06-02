@@ -95,7 +95,7 @@ if st.button("🎯 Önerileri Göster"):
         st.subheader("🧠 Hybrid Öneriler:")
         hybrid = hybrid_recommendations(selected_movies)
         for title in hybrid:
-        st.write(f"🎬 {title}")
+            st.write(f"🎬 {title}")
 
     else:
         st.warning("Lütfen en az bir film seç.")
