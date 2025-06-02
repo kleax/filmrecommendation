@@ -73,29 +73,29 @@ def hybrid_recommendations(selected_titles, n=10):
     return hybrid_scores.index.tolist()
 
 # -------------------- STREAMLIT UI --------------------
-st.title("🎬 Film \u00d6neri Sistemi")
-st.write("Be\u011fendi\u011fin filmleri se\u00e7, \u00fc\u00e7 farkl\u0131 sistemden \u00f6neri al!")
+st.title("Film Oneri Sistemi")
+st.write("Begendiğin filmleri seç, üç farklı sistemden öneri al!")
 
 popular_movies = ratings['movieId'].value_counts().head(300).index
 popular_titles = movies[movies['movieId'].isin(popular_movies)]['title'].sort_values().tolist()
 
-selected_movies = st.multiselect("🎥 Be\u011fendi\u011fin filmleri se\u00e7:", options=popular_titles)
+selected_movies = st.multiselect("Begendiğin filmleri seç:", options=popular_titles)
 
-if st.button("🎯 \u00d6nerileri G\u00f6ster"):
+if st.button("Onerileri Goster"):
     if selected_movies:
-        st.subheader("\ud83d\udcc3 Content-Based \u00d6neriler:")
+        st.subheader("Content-Based Oneriler:")
         cbf = content_recommendations(selected_movies)
         for title in cbf.index:
-            st.write(f"\ud83c\udfae {title}")
+            st.write(title)
 
-        st.subheader("\ud83d\udc65 Collaborative Filtering \u00d6neriler:")
+        st.subheader("Collaborative Filtering Oneriler:")
         cf = cf_recommendations(selected_movies)
         for title in cf.index:
-            st.write(f"\ud83c\udfae {title}")
+            st.write(title)
 
-        st.subheader("\ud83e\uddd0 Hybrid \u00d6neriler:")
+        st.subheader("Hybrid Oneriler:")
         hybrid = hybrid_recommendations(selected_movies)
         for title in hybrid:
-            st.write(f"\ud83c\udfae {title}")
+            st.write(title)
     else:
-        st.warning("L\u00fctfen en az bir film se\u00e7.")
+        st.warning("Lütfen en az bir film seç.")
