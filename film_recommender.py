@@ -12,18 +12,27 @@ def load_data():
     rating_id = "1jJPaxnE0aYIq3_gdrKFZ1yKeOfHLu0i8"
     tag_id = "19fz8f8NxiuBIkWSI9nchShVU_Yfw1PNr"
 
-    # Okuma URL'leri
     base = "https://drive.google.com/uc?export=download&id="
 
     movies = pd.read_csv(base + movie_id)
     ratings = pd.read_csv(base + rating_id)
     tags = pd.read_csv(base + tag_id)
 
+    # 🔍 Sütun isimlerini yazdıralım
+    st.write("📁 movies.csv columns:", movies.columns.tolist())
+    st.write("📁 ratings.csv columns:", ratings.columns.tolist())
+    st.write("📁 tags.csv columns:", tags.columns.tolist())
+
+    # Devam etmeden önce kontrol
+    if 'movieId' not in tags.columns:
+        st.error("❌ 'movieId' sütunu tags.csv dosyasında yok. CSV yapısını kontrol et.")
+        return movies, ratings  # Geri dön ve merge yapma
+
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
-
     return movies, ratings
+
 
 movies, ratings = load_data()
 
