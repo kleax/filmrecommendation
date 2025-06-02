@@ -48,7 +48,7 @@ def content_recommendations(selected_titles, n=10):
     return pd.Series(all_scores).sort_values(ascending=False).head(n)
 
 # -------------------- SIMPLE COLLABORATIVE FILTERING --------------------
-def cf_recommendations(selected_titles, n=10, min_rating=4.0):
+def cf_recommendations(selected_titles, n=10, min_rating=3.0):
     movie_ids = movies[movies['title'].isin(selected_titles)]['movieId'].tolist()
     users_who_liked = ratings[(ratings['movieId'].isin(movie_ids)) & (ratings['rating'] >= min_rating)]['userId'].unique()
     similar_ratings = ratings[(ratings['userId'].isin(users_who_liked)) & (~ratings['movieId'].isin(movie_ids))]
