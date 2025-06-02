@@ -88,15 +88,16 @@ def item_based_recommendations(selected_titles, n=10):
 # -------------------- HYBRID MODEL --------------------
 def hybrid_recommendations(selected_titles, n=10):
     cbf = content_recommendations(selected_titles, n=30)
-    item_cf = item_based_recommendations(selected_titles, n=30)
+    item_cf_list = item_based_recommendations(selected_titles, n=30)
 
     cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.index)
-    item_cf_scores = pd.Series([1 - i/30 for i in range(len(item_cf))], index=item_cf.index)
+    item_cf_scores = pd.Series([1 - i/30 for i in range(len(item_cf_list))], index=item_cf_list)
 
     hybrid_scores = cbf_scores.add(item_cf_scores, fill_value=0)
     hybrid_scores = hybrid_scores.sort_values(ascending=False).head(n)
 
     return hybrid_scores.index.tolist()
+
 
 
 # -------------------- STREAMLIT UI --------------------
