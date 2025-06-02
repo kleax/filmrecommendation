@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 
-# -------------------- VERI YUKLEME --------------------
+# -------------------- VERİ YÜKLEME --------------------
 @st.cache_data
 def load_data():
     movies = pd.read_csv("movies.csv")
@@ -13,11 +13,7 @@ def load_data():
 
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
-
-    # genres alanını düzelt
     movies['genres'] = movies['genres'].str.replace('|', ' ', regex=False)
-
-    # içerik sütununu zenginleştir
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
 
     return movies, ratings
@@ -58,7 +54,6 @@ def cf_recommendations(selected_titles, n=10, min_rating=3.5):
     users_who_liked = ratings[(ratings['movieId'].isin(movie_ids)) & (ratings['rating'] >= min_rating)]['userId'].unique()
     similar_ratings = ratings[(ratings['userId'].isin(users_who_liked)) & (~ratings['movieId'].isin(movie_ids))]
 
-    # En az 10 rating almış filmler
     valid_movies = ratings['movieId'].value_counts()
     valid_movies = valid_movies[valid_movies > 10].index
     similar_ratings = similar_ratings[similar_ratings['movieId'].isin(valid_movies)]
