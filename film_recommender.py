@@ -13,7 +13,6 @@ def load_data():
 
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
-    movies['genres'] = movies['genres'].str.replace('|', ' ', regex=False)
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
 
     return movies, ratings
@@ -48,15 +47,12 @@ def content_recommendations(selected_titles, n=10):
 
     return pd.Series(all_scores).sort_values(ascending=False).head(n)
 
+
 # -------------------- COLLABORATIVE FILTERING --------------------
 def cf_recommendations(selected_titles, n=10, min_rating=3.5):
     movie_ids = movies[movies['title'].isin(selected_titles)]['movieId'].tolist()
     users_who_liked = ratings[(ratings['movieId'].isin(movie_ids)) & (ratings['rating'] >= min_rating)]['userId'].unique()
     similar_ratings = ratings[(ratings['userId'].isin(users_who_liked)) & (~ratings['movieId'].isin(movie_ids))]
-
-    valid_movies = ratings['movieId'].value_counts()
-    valid_movies = valid_movies[valid_movies > 10].index
-    similar_ratings = similar_ratings[similar_ratings['movieId'].isin(valid_movies)]
 
     recommendation_scores = similar_ratings.groupby('movieId')['rating'].mean()
     top_movie_ids = recommendation_scores.sort_values(ascending=False).head(n).index
@@ -64,16 +60,18 @@ def cf_recommendations(selected_titles, n=10, min_rating=3.5):
 
     return pd.Series(top_movies['title'].values, index=top_movies['title'].values)
 
+
 # -------------------- HYBRID MODEL --------------------
 def hybrid_recommendations(selected_titles, n=10):
     cbf = content_recommendations(selected_titles, n=30)
     cf = cf_recommendations(selected_titles, n=30)
 
-    cbf_scores = pd.Series([1 - i / 30 for i in range(len(cbf))], index=cbf.index)
-    cf_scores = pd.Series([1 - i / 30 for i in range(len(cf))], index=cf.index)
+    cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.index)
+    cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.index)
 
     hybrid_scores = cbf_scores.add(cf_scores, fill_value=0)
     hybrid_scores = hybrid_scores.sort_values(ascending=False).head(n)
+
 
     return hybrid_scores.index.tolist()
 
