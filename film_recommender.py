@@ -1,6 +1,3 @@
-import gdown
-import zipfile
-import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -10,26 +7,20 @@ from sklearn.metrics.pairwise import linear_kernel
 # -------------------- VERI YUKLEME --------------------
 @st.cache_data
 def load_data():
-    file_id = "1-C9k0cTqEM3Y6uHMBdwH6mGeJVDagANc"
-    url = f"https://drive.google.com/uc?id={file_id}"
-    output = "movielens_data.zip"
-
-    if not os.path.exists("movies.csv"):
-        gdown.download(url, output, quiet=False)
-
-        with zipfile.ZipFile(output, 'r') as zip_ref:
-            zip_ref.extractall(".")
-
     movies = pd.read_csv("movies.csv")
     ratings = pd.read_csv("ratings.csv")
     tags = pd.read_csv("tags.csv")
 
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
+
+    # genres alanını düzelt
+    movies['genres'] = movies['genres'].str.replace('|', ' ', regex=False)
+
+    # içerik sütununu zenginleştir
     movies['content'] = movies['title'] + ' ' + movies['genres'] + ' ' + movies['tag'].fillna('')
 
     return movies, ratings
-
 
 movies, ratings = load_data()
 
@@ -62,56 +53,4 @@ def content_recommendations(selected_titles, n=10):
     return pd.Series(all_scores).sort_values(ascending=False).head(n)
 
 # -------------------- COLLABORATIVE FILTERING --------------------
-def cf_recommendations(selected_titles, n=10, min_rating=3.5):
-    movie_ids = movies[movies['title'].isin(selected_titles)]['movieId'].tolist()
-    users_who_liked = ratings[(ratings['movieId'].isin(movie_ids)) & (ratings['rating'] >= min_rating)]['userId'].unique()
-    similar_ratings = ratings[(ratings['userId'].isin(users_who_liked)) & (~ratings['movieId'].isin(movie_ids))]
-
-    recommendation_scores = similar_ratings.groupby('movieId')['rating'].mean()
-    top_movie_ids = recommendation_scores.sort_values(ascending=False).head(n).index
-    top_movies = movies[movies['movieId'].isin(top_movie_ids)][['movieId', 'title']]
-
-    return pd.Series(top_movies['title'].values, index=top_movies['title'].values)
-
-# -------------------- HYBRID MODEL --------------------
-def hybrid_recommendations(selected_titles, n=10):
-    cbf = content_recommendations(selected_titles, n=30)
-    cf = cf_recommendations(selected_titles, n=30)
-
-    cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.index)
-    cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.index)
-
-    hybrid_scores = cbf_scores.add(cf_scores, fill_value=0)
-    hybrid_scores = hybrid_scores.sort_values(ascending=False).head(n)
-
-    return hybrid_scores.index.tolist()
-
-# -------------------- STREAMLIT UI --------------------
-st.title("🎬 Film Oneri Sistemi")
-st.markdown("Begendiğin filmleri seç, sistem senin için öneri yapsın.")
-
-popular_movies = ratings['movieId'].value_counts().head(300).index
-popular_titles = movies[movies['movieId'].isin(popular_movies)]['title'].sort_values().tolist()
-
-selected_movies = st.multiselect("🎥 Film Sec:", popular_titles)
-
-if st.button("🚀 Onerileri Goster"):
-    if selected_movies:
-        st.markdown("### 📚 Content-Based Oneriler:")
-        cbf = content_recommendations(selected_movies)
-        for title in cbf.index:
-            st.write(f"🎬 {title}")
-
-        st.markdown("### 👥 Collaborative Filtering Oneriler:")
-        cf = cf_recommendations(selected_movies)
-        for title in cf.index:
-            st.write(f"🎬 {title}")
-
-        st.markdown("### 🧠 Hybrid Oneriler:")
-        hybrid = hybrid_recommendations(selected_movies)
-        for title in hybrid:
-            st.write(f"🎬 {title}")
-    else:
-        st.warning("Lütfen en az bir film seç.")
-
-
+def cf_recommendations(selected_titles, n=10, min_rating=3._
