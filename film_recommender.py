@@ -54,19 +54,22 @@ def cf_recommendations(selected_titles, n=10, min_rating=4.0):
     similar_ratings = ratings[(ratings['userId'].isin(users_who_liked)) & (~ratings['movieId'].isin(movie_ids))]
     recommendation_scores = similar_ratings.groupby('movieId')['rating'].mean()
     top_movie_ids = recommendation_scores.sort_values(ascending=False).head(n).index
-    return movies[movies['movieId'].isin(top_movie_ids)]['title'].reset_index(drop=True)
+    top_movies = movies[movies['movieId'].isin(top_movie_ids)][['movieId', 'title']]
+    return pd.Series(top_movies['title'].values, index=top_movies['title'].values)
+
 
 # -------------------- HYBRID MODEL --------------------
 def hybrid_recommendations(selected_titles, n=10):
     cbf = content_recommendations(selected_titles, n=30)
     cf = cf_recommendations(selected_titles, n=30)
 
-    cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.values)
-    cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.values)
+    cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.index)
+    cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.index)
 
     hybrid_scores = cbf_scores.add(cf_scores, fill_value=0).sort_values(ascending=False)
     
     return hybrid_scores.head(n).index.tolist()
+
 
 
 
