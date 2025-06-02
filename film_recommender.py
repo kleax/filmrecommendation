@@ -53,4 +53,60 @@ def content_recommendations(selected_titles, n=10):
     return pd.Series(all_scores).sort_values(ascending=False).head(n)
 
 # -------------------- COLLABORATIVE FILTERING --------------------
-def cf_recommendations(selected_titles, n=10, min_rating=3._
+def cf_recommendations(selected_titles, n=10, min_rating=3.5):
+    movie_ids = movies[movies['title'].isin(selected_titles)]['movieId'].tolist()
+    users_who_liked = ratings[(ratings['movieId'].isin(movie_ids)) & (ratings['rating'] >= min_rating)]['userId'].unique()
+    similar_ratings = ratings[(ratings['userId'].isin(users_who_liked)) & (~ratings['movieId'].isin(movie_ids))]
+
+    # En az 10 rating almış filmler
+    valid_movies = ratings['movieId'].value_counts()
+    valid_movies = valid_movies[valid_movies > 10].index
+    similar_ratings = similar_ratings[similar_ratings['movieId'].isin(valid_movies)]
+
+    recommendation_scores = similar_ratings.groupby('movieId')['rating'].mean()
+    top_movie_ids = recommendation_scores.sort_values(ascending=False).head(n).index
+    top_movies = movies[movies['movieId'].isin(top_movie_ids)][['movieId', 'title']]
+
+    return pd.Series(top_movies['title'].values, index=top_movies['title'].values)
+
+# -------------------- HYBRID MODEL --------------------
+def hybrid_recommendations(selected_titles, n=10):
+    cbf = content_recommendations(selected_titles, n=30)
+    cf = cf_recommendations(selected_titles, n=30)
+
+    cbf_scores = pd.Series([1 - i / 30 for i in range(len(cbf))], index=cbf.index)
+    cf_scores = pd.Series([1 - i / 30 for i in range(len(cf))], index=cf.index)
+
+    hybrid_scores = cbf_scores.add(cf_scores, fill_value=0)
+    hybrid_scores = hybrid_scores.sort_values(ascending=False).head(n)
+
+    return hybrid_scores.index.tolist()
+
+# -------------------- STREAMLIT UI --------------------
+st.title("🎬 Film Öneri Sistemi")
+st.markdown("Beğendiğin filmleri seç, sistem senin için öneri yapsın.")
+st.markdown(f"📊 Sistem, **{len(movies):,} film** ve **{len(ratings):,} kullanıcı oyu** ile çalışıyor.")
+
+popular_movies = ratings['movieId'].value_counts().head(300).index
+popular_titles = movies[movies['movieId'].isin(popular_movies)]['title'].sort_values().tolist()
+
+selected_movies = st.multiselect("🎥 Film Seç:", popular_titles)
+
+if st.button("🚀 Önerileri Göster"):
+    if selected_movies:
+        st.markdown("### 📚 Content-Based Öneriler:")
+        cbf = content_recommendations(selected_movies)
+        for title in cbf.index:
+            st.write(f"🎬 {title}")
+
+        st.markdown("### 👥 Collaborative Filtering Öneriler:")
+        cf = cf_recommendations(selected_movies)
+        for title in cf.index:
+            st.write(f"🎬 {title}")
+
+        st.markdown("### 🧠 Hybrid Öneriler:")
+        hybrid = hybrid_recommendations(selected_movies)
+        for title in hybrid:
+            st.write(f"🎬 {title}")
+    else:
+        st.warning("Lütfen en az bir film seç.")
