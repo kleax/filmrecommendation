@@ -8,9 +8,9 @@ from sklearn.metrics.pairwise import linear_kernel
 @st.cache_data
 
 def load_data():
-    movies = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/movies.csv")
-    ratings = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/ratings.csv")
-    tags = pd.read_csv("https://raw.githubusercontent.com/kleax/filmrecommendation/refs/heads/main/tags.csv")
+    movies = pd.read_csv("https://huggingface.co/datasets/omersjmsek/movielens/raw/main/movies.csv")
+    ratings = pd.read_csv("https://huggingface.co/datasets/omersjmsek/movielens/raw/main/ratings.csv")
+    tags = pd.read_csv("https://huggingface.co/datasets/omersjmsek/movielens/raw/main/tags.csv")
 
     tags_agg = tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
     movies = movies.merge(tags_agg, on='movieId', how='left')
