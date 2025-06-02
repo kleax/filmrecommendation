@@ -104,6 +104,13 @@ def hybrid_recommendations(selected_titles, n=10):
 st.title("🎬 Film Oneri Sistemi")
 st.markdown("Begendiğin filmleri seç, sistem senin için öneri yapsın.")
 
+st.markdown(f"""
+#### 📊 Sistem Hakkında
+Bu öneriler, {len(movies)} film ve {len(ratings)} kullanıcı oyu temel alınarak oluşturulmuştur.  
+Hem içerik benzerliği hem de izleyici davranışları birlikte analiz edilerek en uygun filmler seçilmektedir.
+""")
+
+
 popular_movies = ratings['movieId'].value_counts().head(300).index
 popular_titles = movies[movies['movieId'].isin(popular_movies)]['title'].sort_values().tolist()
 
