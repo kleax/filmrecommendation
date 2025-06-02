@@ -91,7 +91,7 @@ if st.button("🎯 Önerileri Göster"):
         st.subheader("🧠 Hybrid Öneriler:")
         hybrid = hybrid_recommendations(selected_movies)
         for idx in hybrid:
-            movie_title = movies['title'].iloc[idx]
+            movie_title = idx  # çünkü zaten film adı geliyor
             st.write(f"🎬 {movie_title}")
 
     else:
