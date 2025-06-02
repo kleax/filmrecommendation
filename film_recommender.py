@@ -61,13 +61,13 @@ def hybrid_recommendations(selected_titles, n=10):
     cbf = content_recommendations(selected_titles, n=30)
     cf = cf_recommendations(selected_titles, n=30)
 
-    cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.index)
-    cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.index)
+    cbf_scores = pd.Series([1 - i/30 for i in range(len(cbf))], index=cbf.values)
+    cf_scores = pd.Series([1 - i/30 for i in range(len(cf))], index=cf.values)
 
     hybrid_scores = cbf_scores.add(cf_scores, fill_value=0).sort_values(ascending=False)
     
-    # Film isimlerini döndür
-    return hybrid_scores.head(n).index.to_list()
+    return hybrid_scores.head(n).index.tolist()
+
 
 
 
